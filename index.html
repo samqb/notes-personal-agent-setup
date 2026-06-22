@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Building an AI-Native Second Brain</title>
+<meta name="description" content="How one portfolio-career operator runs their entire knowledge life from a single Obsidian vault driven by Claude — and an always-on agent reachable from a phone.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0eeeb; --bg-white:#fff; --bg-panel:#f7f6f3; --bg-card:#fff;
+  --bg-card-hover:#fafaf8; --bg-elevated:#eeecea;
+  --border:#e0ddd8; --border-mid:#d4d0ca; --border-active:#c0bbb3;
+  --text:#1a1a1a; --text-secondary:#5a5754; --text-dim:#8a8580; --text-ghost:#b5b0aa;
+  --coral:#e8926a; --coral-light:#f2b89e; --coral-bg:rgba(232,146,106,.12);
+  --purple:#9b6ce8; --purple-light:#c4a8f5; --purple-bg:rgba(155,108,232,.10);
+  --green:#2d9d3a; --green-bg:rgba(45,157,58,.08);
+  --orange:#d97b1e; --orange-bg:rgba(217,123,30,.08);
+  --red:#cc3333; --red-bg:rgba(204,51,51,.08);
+  --blue:#3b7dd8; --blue-bg:rgba(59,125,216,.08);
+  --accent-gradient:linear-gradient(90deg,#e8926a,#d97b1e,#cc3333,#9b6ce8);
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',-apple-system,system-ui,sans-serif;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;overflow-x:hidden;}
+body{margin:0;font-family:var(--sans);color:var(--text);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* ───── Layout ───── */
+.layout{display:flex;}
+.content{flex:1;min-width:0;margin-left:200px;}
+@media(max-width:880px){.content{margin-left:0;}}
+
+/* ───── Sidebar nav ───── */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:200px;
+  padding:34px 14px 34px 26px;background:var(--bg-panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;gap:3px;z-index:40;overflow-y:auto;
+}
+.sidebar-brand{
+  font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:1.5px;
+  color:var(--text);text-transform:uppercase;line-height:1.4;margin-bottom:4px;
+}
+.sidebar-brand .dot{color:var(--coral);}
+.sidebar-tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--text-ghost);
+  text-transform:uppercase;margin-bottom:26px;
+}
+.nav-group-label{
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text-ghost);
+  text-transform:uppercase;margin:18px 0 6px;
+}
+.nav-item{
+  font-size:12.5px;color:var(--text-dim);text-decoration:none;padding:6px 10px;
+  border-left:2px solid transparent;cursor:pointer;transition:all .2s ease;
+  line-height:1.3;border-radius:0 4px 4px 0;
+}
+.nav-item:hover{color:var(--text-secondary);background:var(--bg-elevated);}
+.nav-item.active{color:var(--coral);border-left-color:var(--coral);background:var(--coral-bg);font-weight:500;}
+
+/* mobile top bar */
+.mobile-bar{display:none;}
+@media(max-width:880px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s ease;width:240px;box-shadow:4px 0 24px rgba(0,0,0,.12);}
+  .sidebar.open{transform:translateX(0);}
+  .mobile-bar{
+    display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30;
+    background:var(--bg-panel);border-bottom:1px solid var(--border);padding:14px 20px;
+  }
+  .mobile-bar .mb-title{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;}
+  .mobile-bar .mb-title .dot{color:var(--coral);}
+  .hamb{background:none;border:1px solid var(--border-mid);border-radius:7px;padding:7px 11px;font-size:15px;cursor:pointer;color:var(--text);}
+}
+
+/* ───── Hero ───── */
+.hero{
+  min-height:88vh;display:flex;flex-direction:column;justify-content:center;
+  background:linear-gradient(135deg,#1a1a1a 0%,#2a2520 40%,#3a2e25 100%);
+  padding:80px 9vw 90px;position:relative;
+}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--accent-gradient);}
+.hero-eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:30px;}
+.hero h1{margin:0;font-size:clamp(40px,6vw,76px);font-weight:800;letter-spacing:-2px;color:#fff;line-height:1.04;max-width:14ch;}
+.hero h1 em{color:var(--coral-light);font-style:normal;}
+.hero .lede{margin:30px 0 0;font-size:clamp(16px,1.7vw,20px);font-weight:300;color:rgba(255,255,255,.75);max-width:62ch;line-height:1.6;}
+.hero-meta{margin-top:46px;display:flex;gap:30px;flex-wrap:wrap;}
+.hero-stat .n{font-family:var(--mono);font-size:26px;font-weight:500;color:var(--coral-light);}
+.hero-stat .l{font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px;}
+
+/* ───── Sections ───── */
+section{padding:78px 9vw;position:relative;border-bottom:1px solid var(--border);scroll-margin-top:0;}
+section:nth-child(even){background:var(--bg-panel);}
+.section-top{height:3px;width:60px;background:var(--accent-gradient);border-radius:2px;margin-bottom:26px;}
+.slide-label{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:1.5px;color:var(--coral);text-transform:uppercase;margin-bottom:12px;}
+section h2{margin:0 0 14px;font-size:clamp(30px,3.6vw,48px);font-weight:800;letter-spacing:-1.5px;color:var(--text);line-height:1.06;}
+section h2 em{color:var(--coral);font-style:normal;}
+.section-sub{margin:0 0 40px;font-size:17px;color:var(--text-secondary);line-height:1.7;max-width:74ch;}
+section h3.block-h{font-size:13px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin:44px 0 18px;font-weight:500;}
+p{max-width:74ch;color:var(--text-secondary);}
+section p strong{color:var(--text);font-weight:600;}
+a.inline{color:var(--coral);text-decoration:none;border-bottom:1px solid var(--coral-light);}
+
+/* ───── Cards ───── */
+.grid{display:grid;gap:16px;}
+.grid.c2{grid-template-columns:repeat(2,1fr);}
+.grid.c3{grid-template-columns:repeat(3,1fr);}
+.grid.c4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:900px){.grid.c3,.grid.c4{grid-template-columns:1fr 1fr;}}
+@media(max-width:620px){.grid.c2,.grid.c3,.grid.c4{grid-template-columns:1fr;}}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:22px;transition:all .2s ease;}
+.card:hover{background:var(--bg-card-hover);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.04);}
+.card .k{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:1px;color:var(--coral);}
+.card h3{margin:8px 0 7px;font-size:16px;font-weight:700;color:var(--text);}
+.card p{margin:0;font-size:13.5px;color:var(--text-secondary);line-height:1.6;}
+
+.accent-card{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--coral);border-radius:0 10px 10px 0;padding:18px 22px;transition:all .2s ease;}
+.accent-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.04);}
+.accent-card.purple{border-left-color:var(--purple);}
+.accent-card.blue{border-left-color:var(--blue);}
+.accent-card.green{border-left-color:var(--green);}
+.accent-card.orange{border-left-color:var(--orange);}
+.accent-card.red{border-left-color:var(--red);}
+.accent-card h3{margin:0 0 5px;font-size:15.5px;font-weight:700;color:var(--text);}
+.accent-card p{margin:0;font-size:13.5px;color:var(--text-secondary);line-height:1.6;}
+
+/* ───── Callouts ───── */
+.callout{border-radius:10px;padding:18px 22px;margin:26px 0;font-size:14.5px;line-height:1.65;max-width:84ch;}
+.callout .ct{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:7px;display:block;}
+.callout p{margin:0;max-width:none;}
+.callout.coral{background:var(--coral-bg);} .callout.coral .ct{color:var(--coral);}
+.callout.orange{background:var(--orange-bg);} .callout.orange .ct{color:var(--orange);}
+.callout.purple{background:var(--purple-bg);} .callout.purple .ct{color:var(--purple);}
+.callout.blue{background:var(--blue-bg);} .callout.blue .ct{color:var(--blue);}
+.callout.red{background:var(--red-bg);} .callout.red .ct{color:var(--red);}
+.callout.green{background:var(--green-bg);} .callout.green .ct{color:var(--green);}
+
+/* ───── Code / structure blocks ───── */
+.code{
+  background:#211d1a;border:1px solid #38322c;border-radius:10px;padding:20px 22px;
+  font-family:var(--mono);font-size:12.5px;line-height:1.75;color:#d8d2c8;
+  overflow-x:auto;margin:22px 0;max-width:100%;
+}
+.code .cm{color:#8a8580;}
+.code .hl{color:var(--coral-light);}
+.code .hl2{color:#c4a8f5;}
+.code .hl3{color:#8fc99a;}
+pre{margin:0;}
+
+/* ───── Tables ───── */
+.tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--border);border-radius:10px;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px;}
+th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);font-weight:500;padding:13px 16px;background:var(--bg-elevated);border-bottom:1px solid var(--border);}
+td{padding:13px 16px;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+td code,p code,li code,.card code{font-family:var(--mono);font-size:.86em;background:var(--bg-elevated);padding:1px 6px;border-radius:4px;color:var(--text);}
+.tag{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.tag.live{background:var(--green-bg);color:var(--green);}
+.tag.plan{background:var(--blue-bg);color:var(--blue);}
+
+/* ───── Steps ───── */
+.step{display:flex;gap:18px;padding:18px 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step .num{font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;background:var(--coral);min-width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step .body{flex:1;}
+.step h3{margin:3px 0 5px;font-size:16px;font-weight:700;color:var(--text);}
+.step p{margin:0;font-size:14px;}
+
+/* ───── Pills / inline lists ───── */
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0;}
+.pill{font-family:var(--mono);font-size:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:6px 14px;color:var(--text-secondary);}
+.pill b{color:var(--text);font-weight:600;}
+
+ul.clean{list-style:none;padding:0;margin:18px 0;max-width:78ch;}
+ul.clean li{padding:9px 0 9px 26px;position:relative;color:var(--text-secondary);font-size:14.5px;line-height:1.6;border-bottom:1px solid var(--border);}
+ul.clean li:last-child{border-bottom:none;}
+ul.clean li::before{content:'→';position:absolute;left:0;color:var(--coral);font-weight:600;}
+ul.clean li b{color:var(--text);}
+
+/* ───── Closing ───── */
+.closing{
+  background:linear-gradient(135deg,#1a1a1a 0%,#2a2520 40%,#3a2e25 100%);
+  padding:96px 9vw;position:relative;text-align:center;border-bottom:none;
+}
+.closing::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent-gradient);}
+.closing blockquote{margin:0 auto;font-size:clamp(24px,3vw,40px);font-weight:600;color:#fff;line-height:1.32;max-width:20ch;letter-spacing:-.5px;}
+.closing blockquote em{color:var(--coral-light);font-style:normal;}
+.closing .foot{margin-top:46px;font-family:var(--mono);font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase;line-height:2;}
+
+/* ───── Reveal ───── */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease-out,transform .6s ease-out;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.rd1{transition-delay:.08s;} .rd2{transition-delay:.16s;} .rd3{transition-delay:.24s;} .rd4{transition-delay:.32s;}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}}
+</style>
+</head>
+<body>
+
+<!-- ───── Sidebar ───── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">Second Brain<span class="dot">.</span></div>
+  <div class="sidebar-tag">AI-Native System</div>
+  <div class="nav-group-label">The System</div>
+  <a class="nav-item" href="#overview">Overview</a>
+  <a class="nav-item" href="#vault">The Vault</a>
+  <a class="nav-item" href="#automations">Automations</a>
+  <a class="nav-item" href="#agent">Always-On Agent</a>
+  <div class="nav-group-label">Practice</div>
+  <a class="nav-item" href="#patterns">Working Patterns</a>
+  <a class="nav-item" href="#dashboard">The Dashboard</a>
+  <div class="nav-group-label">For You</div>
+  <a class="nav-item" href="#replicate">Replicate This</a>
+  <a class="nav-item" href="#future">Where It's Going</a>
+</nav>
+
+<div class="mobile-bar">
+  <div class="mb-title">Second Brain<span class="dot">.</span></div>
+  <button class="hamb" id="hamb" aria-label="Menu">☰</button>
+</div>
+
+<div class="layout">
+<main class="content">
+
+<!-- ───── Hero ───── -->
+<header class="hero">
+  <div class="hero-eyebrow reveal">A field note on a personal agentic system</div>
+  <h1 class="reveal rd1">Building an <em>AI-native</em> second brain</h1>
+  <p class="lede reveal rd2">
+    One plain-text vault. A desktop AI that runs the automations. An always-on agent you can
+    message from your phone. This is how a portfolio-career operator collapsed five apps into a
+    single knowledge system that does most of its own upkeep — and the patterns you'd reuse to build your own.
+  </p>
+  <div class="hero-meta reveal rd3">
+    <div class="hero-stat"><div class="n">1</div><div class="l">Vault, one source of truth</div></div>
+    <div class="hero-stat"><div class="n">8</div><div class="l">Automations / day</div></div>
+    <div class="hero-stat"><div class="n">100s</div><div class="l">People as pages</div></div>
+    <div class="hero-stat"><div class="n">3</div><div class="l">Surfaces, one brain</div></div>
+  </div>
+</header>
+
+<!-- ───── 1. Overview ───── -->
+<section id="overview">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">01 — The Pitch</div>
+  <h2 class="reveal rd1">Five apps, collapsed into <em>one vault</em></h2>
+  <p class="section-sub reveal rd2">
+    A portfolio career — spanning advisory, fractional leadership, and angel investing across several work
+    streams — means hundreds of stakeholders, dozens of live threads, and meetings that jump between
+    completely different contexts. The fix wasn't a better app. It was deleting most of them and putting
+    everything in one place an AI could actually operate.
+  </p>
+
+  <h3 class="block-h reveal">The consolidation</h3>
+  <p class="reveal">
+    Before: notes, tasks, and years of context were scattered across five tools — a chat assistant's project
+    folders, a corporate note app, a personal note app, a dedicated task manager, and assorted others. Everything
+    got exported and imported into one Obsidian vault, filed into archive folders. Then the old apps came off the
+    dock and the phone home screen. What's left is <strong>Obsidian and Claude</strong>.
+  </p>
+
+  <div class="callout coral reveal">
+    <span class="ct">The core idea</span>
+    <p>The "app" is the vault plus a few agents that operate on it. There's no database and no backend —
+    just plain Markdown that's portable, diffable, greppable, and future-proof. Every tool reads and writes
+    the same files.</p>
+  </div>
+
+  <h3 class="block-h reveal">What a typical morning looks like</h3>
+  <p class="reveal">By the time the vault is opened each day — before anything else is touched — it already holds:</p>
+  <div class="grid c3" style="margin-top:18px;">
+    <div class="card reveal"><div class="k">~05:00</div><h3>Meeting prep</h3><p>A brief for every meeting today: who's attending, the last notes with them, and open items still in the air.</p></div>
+    <div class="card reveal rd1"><div class="k">~05:30</div><h3>Tasks brief</h3><p>A smart lens over the single task file — what's flagged, what's gone stale, what's been waiting on someone too long.</p></div>
+    <div class="card reveal rd2"><div class="k">~04:00</div><h3>Email gravity</h3><p>One ranked view of inbox pressure: who's waiting, what's urgent, what was flagged, what's safe to ignore.</p></div>
+    <div class="card reveal"><div class="k">~06:00</div><h3>Night-shift read</h3><p>A divergent overnight pass that connects threads across recently-touched notes and names blind spots.</p></div>
+    <div class="card reveal rd1"><div class="k">~00:00</div><h3>Meeting sync</h3><p>Yesterday's meeting transcripts filed into the right project folder, with every attendee wikilinked.</p></div>
+    <div class="card reveal rd2"><div class="k">Daily</div><h3>One daily note</h3><p>A single page that pulls all of the above in by transclusion. Open it and the whole day is there.</p></div>
+  </div>
+
+  <div class="callout blue reveal" style="margin-top:30px;">
+    <span class="ct">Three surfaces, one brain</span>
+    <p>The work is split by <strong>job, not by data</strong>. An always-on machine owns the scheduled work and
+    backups. A laptop is for interactive sessions. A phone drives the always-on machine remotely. All three share
+    the one synced vault.</p>
+  </div>
+</section>
+
+<!-- ───── 2. The Vault ───── -->
+<section id="vault">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">02 — The Store</div>
+  <h2 class="reveal rd1">The vault as <em>second brain</em></h2>
+  <p class="section-sub reveal rd2">
+    Everything — notes, meetings, people, tasks, project context, even the AI's own memory — lives in one
+    Obsidian vault of plain Markdown. This is the most shareable, least sensitive layer, and the foundation
+    everything else assumes.
+  </p>
+
+  <h3 class="block-h reveal">The folder skeleton</h3>
+  <div class="code reveal"><pre>VAULT/
+  TASKS.md            <span class="cm">single task file, sectioned by ### area</span>
+  NEW.md              <span class="cm">shared session log — every agent writes here</span>
+  DECISIONS.md        <span class="cm">rolling decision log + current priorities</span>
+  AGENTS.md           <span class="cm">pointer file for the always-on agent</span>
+  dashboard.html      <span class="cm">single-file browser dashboard over the vault</span>
+  <span class="hl">daily/</span>             one note per day — a "view" layer
+  <span class="hl">briefs/</span>            generated outputs from scheduled tasks
+  <span class="hl">agent-drafts/</span>      always-on agent writes drafts here for review
+  <span class="hl">projects/</span>          one folder per work stream (each with its own meetings/)
+  <span class="hl">meetings/</span>          only uncategorised + external / expert calls
+  <span class="hl">people/</span>            one page per person — your CRM
+  <span class="hl">notes/</span>             everything thematic (tech, ideas, learning, …)
+    ideas/           an IDEAS index + dated idea archives
+  <span class="hl">templates/</span>         note templates  ·  <span class="hl">clippings/</span> web saves  ·  <span class="hl">attachments/</span>
+  <span class="hl">_archive/</span>          dated archives + monthly log rollups
+  <span class="hl2">_claude/</span>           agent context + memory (not for human use)</pre></div>
+
+  <h3 class="block-h reveal">The design decisions that make it work</h3>
+  <div class="grid c2">
+    <div class="accent-card reveal"><h3>People as pages</h3><p>Every person gets a page in <code>people/</code> with YAML frontmatter (org, role, aliases). Meeting notes wikilink attendees like <code>[[Jane Smith]]</code>. Obsidian's native backlinks then give you a free CRM — open anyone's page and see every meeting and note they appear in, with zero upkeep. This is the highest-leverage convention in the whole system.</p></div>
+    <div class="accent-card purple reveal rd1"><h3>Dataview for live queries</h3><p>Project hubs don't maintain meeting lists by hand. They run queries like <code>LIST FROM "projects/x/meetings" SORT file.name DESC LIMIT 15</code> that auto-update. People pages use <code>WHERE contains(file.outlinks, this.file.link)</code> to list every backlink dynamically.</p></div>
+    <div class="accent-card blue reveal"><h3>Daily notes as a view layer</h3><p>Scheduled tasks write standalone files to <code>briefs/</code>. The daily-note template embeds them by transclusion (<code>![[meeting-prep]]</code>) and shows different briefs on different weekdays. Tasks stay simple — write one file — and the daily note is just a lens over them.</p></div>
+    <div class="accent-card green reveal rd1"><h3>One task file</h3><p>No monthly pages, no nested system. A single <code>TASKS.md</code> at the root, sectioned by <code>###</code> area, plus <code>## Waiting On</code> and <code>## Recently Completed</code>. Flat and in one file is what lets a dashboard and the agents reason over it cleanly.</p></div>
+    <div class="accent-card orange reveal"><h3>Meetings live with their project</h3><p>Each project folder has its own <code>meetings/</code> subfolder, so a work stream's hub, docs, and meetings stay together. Only genuinely uncategorised or external calls go in the root <code>meetings/</code>.</p></div>
+    <div class="accent-card red reveal rd1"><h3>Agent memory is separate</h3><p>The <code>_claude/</code> folder holds structured context the AI reads at session start — people profiles, project context, a glossary. It's deliberately <em>separate</em> from the human-facing <code>people/</code> and <code>projects/</code> pages. Don't merge them.</p></div>
+  </div>
+
+  <h3 class="block-h reveal">Two-tier AI memory</h3>
+  <p class="reveal">
+    Agents don't remember across sessions, so memory is files. A hot cache and the detail it points to:
+  </p>
+  <div class="code reveal"><pre>_claude/
+  <span class="hl">CLAUDE.md</span>            <span class="cm">working memory: who you are, setup, conventions (read every session)</span>
+  memory/
+    context/           <span class="cm">preferences, voice & style, the operating conventions</span>
+    people/            <span class="cm">deeper profiles by domain (beyond the CRM pages)</span>
+    projects/          <span class="cm">per-project context + the canonical scheduled-task list</span>
+    glossary.md        <span class="cm">acronyms, nicknames, codenames the agent must decode</span></pre></div>
+  <p class="reveal">
+    <code>CLAUDE.md</code> is kept tight — a working note, not an essay: who you are, your areas, your setup,
+    your preferences, and pointers into <code>memory/</code>. The glossary is what lets the AI understand
+    shorthand like a colleague would.
+  </p>
+
+  <h3 class="block-h reveal">Plugins doing the heavy lifting</h3>
+  <div class="pills reveal">
+    <span class="pill"><b>Dataview</b> · live queries</span>
+    <span class="pill"><b>Templater</b> · daily-note template</span>
+    <span class="pill"><b>Local REST API</b> · vault access for tools</span>
+    <span class="pill"><b>Smart Connections</b> · semantic search</span>
+    <span class="pill"><b>Web Clipper</b> · article capture</span>
+    <span class="pill"><b>Obsidian Sync</b> · cross-device</span>
+  </div>
+</section>
+
+<!-- ───── 3. Automations ───── -->
+<section id="automations">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">03 — The Engine</div>
+  <h2 class="reveal rd1">Automations that run <em>while you sleep</em></h2>
+  <p class="section-sub reveal rd2">
+    Claude Cowork is a desktop agent that can read and write the vault folder and run tasks on a schedule.
+    It runs on the always-on machine. Each scheduled task writes one standalone, rolling file into
+    <code>briefs/</code>, and the daily note pulls them in. Most of the system's value lands here.
+  </p>
+
+  <div class="tbl-wrap reveal">
+    <table>
+      <thead><tr><th>Task</th><th>When</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>meeting-sync</code></td><td>~midnight</td><td>Files yesterday's meeting transcripts into the right project folder, wikilinking attendees. Dedupes via a state file.</td></tr>
+        <tr><td><code>email-gravity</code></td><td>~04:00</td><td>One ranked view of inbox pressure — who's waiting, what's urgent, what's ignorable. Sweeps incrementally via a small state file; carries over yesterday's open items.</td></tr>
+        <tr><td><code>meeting-prep</code></td><td>~05:00</td><td>A prep brief for each of today's meetings: attendee context, last notes, open items.</td></tr>
+        <tr><td><code>tasks-brief</code></td><td>~05:30</td><td>A smart view onto the task file: flagged items, hot-by-area, what's stale, what's overdue. Reads only — never edits the task file.</td></tr>
+        <tr><td><code>night-shift</code></td><td>~06:00</td><td>A divergent overnight read: connects threads across recently-touched files, names blind spots, proposes a few surgical moves.</td></tr>
+        <tr><td><code>capture-to-task</code></td><td>every 15 min</td><td>Near-real-time companion: drops newly-flagged emails straight into the task file during the day.</td></tr>
+        <tr><td><code>periodic-digest</code></td><td>daily</td><td>An append-only, de-duplicated inventory of a recurring inbound stream (kept as a running index, not a rolling file).</td></tr>
+        <tr><td><code>vault-hygiene</code></td><td>weekly</td><td>Auto-applies safe cleanup and proposes the rest — the housekeeping pass that keeps the vault from rotting.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="block-h reveal">The lessons baked into this model</h3>
+  <div class="grid c3">
+    <div class="card reveal"><div class="k">CONSOLIDATE</div><h3>Fewer, self-contained tasks</h3><p>An earlier version had separate triage / stale-reply / action-extractor / Monday / Friday jobs. They were collapsed into one inbox sweep and one task brief. Fewer self-contained tasks beat many brittle chained ones.</p></div>
+    <div class="card reveal rd1"><div class="k">SILENT FAILURE</div><h3>Rolling files fail quietly</h3><p>A rolling output overwrites in place, so a dead pipeline just leaves yesterday's file with no error. Every brief prints its own date — you check the date, not mere presence, when something looks off.</p></div>
+    <div class="card reveal rd2"><div class="k">INCREMENTAL</div><h3>State files for sweeps</h3><p>Tasks that sweep an inbox keep a small JSON state file (last-run timestamp) so each run only processes what's new, with per-item dedupe as the real safety net.</p></div>
+  </div>
+
+  <div class="callout orange reveal">
+    <span class="ct">Model choice</span>
+    <p>The scheduled tasks inherit the desktop's default model — currently the latest Claude. One concrete lesson:
+    a different model family was trialled for "cognitive diversity" but its max output-token limit was far lower and
+    it errored on real, tool-heavy runs. <strong>Check a model's max output tokens against your actual workloads
+    before committing.</strong> Diversity is a nice-to-have; a model that errors on long tool turns is not.</p>
+  </div>
+</section>
+
+<!-- ───── 4. Always-On Agent ───── -->
+<section id="agent">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">04 — The Always-On Layer</div>
+  <h2 class="reveal rd1">An agent you can <em>message from anywhere</em></h2>
+  <p class="section-sub reveal rd2">
+    Cowork is great while a machine is awake. The optional final layer adds a 24/7 agent on a small, hardened
+    mini-PC that you reach from your phone — to capture a thought at 6am, pull a brief as a voice note, or run
+    research while walking. This kit uses an open, self-hostable agent framework; the shape applies to any
+    sandboxed, chat-capable agent. This is the most security-sensitive layer, so the discipline matters most here.
+  </p>
+
+  <div class="callout red reveal">
+    <span class="ct">Rule zero — do this first</span>
+    <p>Split personal from work <strong>before</strong> putting an always-on agent in front of the vault. An agent
+    you can DM from anywhere must never have personal content in its prompt. The work vault syncs to all devices and
+    the always-on machine; a separate personal vault syncs to your devices only — the always-on machine never gets it.</p>
+  </div>
+
+  <h3 class="block-h reveal">The security model</h3>
+  <div class="grid c2">
+    <div class="accent-card red reveal"><h3>Least-privilege users</h3><p>A non-admin user (not in sudoers) runs the agent; a separate admin user handles system changes. The blast radius of a compromised agent is then just one home folder.</p></div>
+    <div class="accent-card orange reveal rd1"><h3>Every tool call is sandboxed</h3><p>The key boundary: tool calls run inside a hardened container, not on the host. Drop all capabilities and re-add only what's needed, no new privileges, a PID limit, and no host secrets forwarded in unless explicitly allowlisted.</p></div>
+    <div class="accent-card blue reveal"><h3>Mount only what you intend</h3><p>Bind-mount the <em>work</em> vault into the container and nothing else. The agent reads freely within the mount; if you don't want it touching code repos, you don't mount them.</p></div>
+    <div class="accent-card purple reveal rd1"><h3>Network &amp; secrets discipline</h3><p>Encrypted disk, firewall on, no public exposure — remote access only over a private VPN mesh. An outbound firewall catches anything phoning home. Secrets come from a password-manager CLI into the agent's environment, never pasted into a prompt.</p></div>
+  </div>
+
+  <h3 class="block-h reveal">The drafts-only rule</h3>
+  <div class="callout coral reveal">
+    <span class="ct">Non-negotiable, baked into the agent's memory</span>
+    <p>The always-on agent writes to <code>agent-drafts/</code>, <code>briefs/</code>, and (for quick capture)
+    <code>TASKS.md</code> / <code>NEW.md</code> — and nothing else. <strong>No moves, renames, or deletes outside
+    those without explicit permission in the same message.</strong> If it thinks something should be archived, it
+    proposes and waits. This is a convention enforced via memory — which is exactly why the model choice and the
+    memory instruction both matter. It exists because an over-eager model once moved and renamed files unprompted.</p>
+  </div>
+
+  <h3 class="block-h reveal">What it does (and deliberately doesn't)</h3>
+  <p class="reveal">The always-on agent is intentionally <strong>reactive — it runs no scheduled jobs</strong>. All scheduled briefs come from Cowork on the same machine. Its jobs are narrow:</p>
+  <ul class="clean reveal">
+    <li><b>Deliver briefs on request</b> — synthesise the Cowork-generated briefs and reply as a voice note ("brief me", "read the night-shift").</li>
+    <li><b>Capture</b> — turn a quick voice or text message into a task or session-log entry.</li>
+    <li><b>Ad-hoc</b> — research, drafting, and vault Q&amp;A on demand.</li>
+    <li><b>Log</b> non-routine sessions to its own log file, which Cowork folds into the shared session log.</li>
+  </ul>
+
+  <h3 class="block-h reveal">Voice, in and out</h3>
+  <div class="grid c2 reveal">
+    <div class="card"><div class="k">AGENT → YOU</div><h3>Text-to-speech</h3><p>The agent speaks replies and briefs. A good default rule: if you send a voice message, it always replies with a voice note.</p></div>
+    <div class="card"><div class="k">YOU → AGENT</div><h3>Speech-to-text</h3><p>Let the messaging platform transcribe your voice messages before they reach the agent — it sees the transcript, not the audio. You rarely need to run speech-to-text yourself.</p></div>
+  </div>
+  <p class="reveal" style="margin-top:18px;">
+    The chat gateway runs as a managed service generated by the framework's own command — hand-rolled service files
+    miss required environment entries and fail silently. The agent's job here is light (summarise and read, not heavy
+    generation), so a mid-tier model from the same family as the main agent is the right call.
+  </p>
+</section>
+
+<!-- ───── 5. Working Patterns ───── -->
+<section id="patterns">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">05 — Practice</div>
+  <h2 class="reveal rd1">The working patterns that <em>compound</em></h2>
+  <p class="section-sub reveal rd2">
+    A few conventions, written once into the AI's memory so every session obeys them. These are the difference
+    between an AI that helps occasionally and one that operates the vault reliably.
+  </p>
+
+  <div class="grid c2">
+    <div class="accent-card reveal"><h3>The staging convention</h3><p>New AI-generated files land in a <code>_staging/</code> subfolder first — never straight into a live project folder. Edits to existing files happen in place. You review, then promote the keepers or delete the rest. A 50-slide deck might have a bug on slide 34; staging is a clean review gate that keeps working folders uncluttered.</p></div>
+    <div class="accent-card blue reveal rd1"><h3>The shared session log</h3><p>Every agent session that changes the vault appends one entry to <code>NEW.md</code> — reverse-chronological, one entry per session, a dated header plus a short summary and artifact list. It's how multiple surfaces (the always-on agent, the laptop, scheduled tasks) see what the others did. Routine brief regenerations aren't logged.</p></div>
+    <div class="accent-card purple reveal"><h3>Session-continuity files</h3><p>Sessions don't share memory. At a checkpoint, the AI writes a handoff note in the project's folder: what's done, what's still broken, what rules were discovered, what the next session needs. A fresh session reads it and picks up exactly where the last left off — including the hard-won "this breaks in that tool" knowledge. The single most important discovery for multi-session work.</p></div>
+    <div class="accent-card green reveal rd1"><h3>Archive safety</h3><p>Learned the hard way: last-modified date is <em>not</em> a staleness signal — reference notes get linked, not edited, so they look old while being load-bearing. Before archiving anything, grep the vault for inbound links; if a live file links it, don't move it. Default to archive (move), not delete.</p></div>
+  </div>
+
+  <h3 class="block-h reveal">Custom skills as reusable playbooks</h3>
+  <p class="reveal">
+    Skills are instruction sets the AI auto-loads when a trigger phrase fires — brand guidelines, a document format,
+    an analysis playbook. Each is a folder with a <code>SKILL.md</code> (name, description, triggers) and an optional
+    <code>references/</code> folder of worked examples for few-shot grounding. You write one once you've done the task
+    manually a couple of times and know the exact patterns you want.
+  </p>
+  <div class="grid c3">
+    <div class="card reveal"><div class="k">PROMOTE</div><h3>/ideate</h3><p>Scans recent meetings, notes, and imports for ideas worth their own page — recurring themes and frameworks, not action items — and graduates each into a standalone note with an evidence trail and wikilinks.</p></div>
+    <div class="card reveal rd1"><div class="k">FILTER</div><h3>/crit</h3><p>The counterpart. Where ideate promotes, crit kills the weak ones — separates signal from noise, challenges assumptions, exposes blind spots, names the few threads actually worth pulling. Run them as a pair.</p></div>
+    <div class="card reveal rd2"><div class="k">PRODUCE</div><h3>Branded output</h3><p>Per-style deck and document skills carry exact colours, fonts, and layout patterns, plus reference build scripts — the difference between "generic slides" and slides that match your house style.</p></div>
+  </div>
+
+  <div class="callout coral reveal">
+    <span class="ct">Why this matters</span>
+    <p>The ideate → crit cycle stops the vault from accumulating beautiful but untested frameworks. And because the
+    conventions live in memory rather than in your head, they survive across sessions, surfaces, and even different agents.</p>
+  </div>
+</section>
+
+<!-- ───── 6. Dashboard ───── -->
+<section id="dashboard">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">06 — The Surface</div>
+  <h2 class="reveal rd1">One HTML file that <em>reads the vault</em></h2>
+  <p class="section-sub reveal rd2">
+    A single self-contained <code>dashboard.html</code> at the vault root that reads — and writes — vault files
+    directly in the browser via the File System Access API. No server, no build step, no backend. Open the file,
+    grant it access to your vault folder once, and it renders live content.
+  </p>
+
+  <div class="grid c4">
+    <div class="card reveal"><div class="k">TAB</div><h3>Tasks</h3><p>Parses the task file by <code>###</code> section. Board view with drag-drop between sections, list view, checkboxes that toggle completion, progress bars per area.</p></div>
+    <div class="card reveal rd1"><div class="k">TAB</div><h3>Briefs</h3><p>Renders the latest daily note with transclusions resolved, so embedded briefs show inline rather than as raw link syntax.</p></div>
+    <div class="card reveal rd2"><div class="k">TAB</div><h3>People</h3><p>A searchable CRM over the <code>people/</code> folder. Grid and table views, sortable columns, click-to-edit fields read from frontmatter.</p></div>
+    <div class="card reveal rd3"><div class="k">TAB</div><h3>Ideas</h3><p>Renders the ideas index as styled cards grouped by theme — the output of the <code>/ideate</code> skill, surfaced where you'll see it.</p></div>
+  </div>
+  <div class="grid c2" style="margin-top:16px;">
+    <div class="card reveal"><div class="k">TAB</div><h3>Memory</h3><p>Browse and edit the <code>_claude/</code> memory files directly — see what the AI "knows" and update it without leaving the dashboard.</p></div>
+    <div class="card reveal rd1"><div class="k">HOW</div><h3>No dependencies</h3><p>One HTML file with inline CSS and JS. The vault handle is persisted in IndexedDB so you don't re-pick each time, and every edit autosaves immediately. It keys off file paths and Markdown conventions, so it works on any vault that follows the same structure.</p></div>
+  </div>
+
+  <div class="callout blue reveal">
+    <span class="ct">Built on, then beyond</span>
+    <p>The base dashboard and the single task file ship from a Productivity plugin out of the box. This one was
+    extended well past that — a People CRM, an Ideas tab, board view with drag-drop, transclusion resolution, and
+    autosave — but the point stands: you can start with the generated version and grow it.</p>
+  </div>
+</section>
+
+<!-- ───── 7. Replicate ───── -->
+<section id="replicate">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">07 — Build Your Own</div>
+  <h2 class="reveal rd1">Replicate this in <em>three phases</em></h2>
+  <p class="section-sub reveal rd2">
+    Phases 1 and 2 deliver most of the value — you can stop after Phase 2 and have a working AI-native second brain.
+    Phase 3 (always-on) is optional and the most involved. Build phase by phase; don't begin one until the previous
+    one verifies.
+  </p>
+
+  <h3 class="block-h reveal">Decide these first</h3>
+  <ul class="clean reveal">
+    <li><b>Your areas</b> — the 4–10 top-level work streams or life areas that become your task sections and project folders.</li>
+    <li><b>Personal vs. work</b> — if you'll ever add an always-on agent, plan a separate personal vault now.</li>
+    <li><b>Connectors</b> — which inboxes, calendars, and meeting tools the AI may use for the briefs.</li>
+    <li><b>How far</b> — stop at Phase 2, or go all the way to Phase 3?</li>
+    <li><b>Backups</b> — live sync is a given; pick a git host and an optional cloud mirror.</li>
+  </ul>
+
+  <h3 class="block-h reveal">Phase 1 — the Obsidian foundation</h3>
+  <div class="reveal">
+    <div class="step"><div class="num">1</div><div class="body"><h3>Create the folder skeleton</h3><p>The structure from §02. Keep the folder names — the later automation keys off them.</p></div></div>
+    <div class="step"><div class="num">2</div><div class="body"><h3>Install plugins</h3><p>Dataview, Templater, Local REST API, optionally Smart Connections and Web Clipper. Enable the core Daily Notes plugin.</p></div></div>
+    <div class="step"><div class="num">3</div><div class="body"><h3>Wire daily notes + Templater</h3><p>New notes to <code>daily/</code>, date format <code>YYYY-MM-DD</code>, template at <code>templates/daily-note.md</code>, with "trigger Templater on new file creation" on.</p></div></div>
+    <div class="step"><div class="num">4</div><div class="body"><h3>Seed the CRM</h3><p>Make a couple of people pages with frontmatter and a Dataview backlinks block; write a meeting note that wikilinks them; confirm the backlink query shows it.</p></div></div>
+    <div class="step"><div class="num">5</div><div class="body"><h3>Project hubs + task file</h3><p>One hub per work stream with a live Dataview meeting query; a single <code>TASKS.md</code> sectioned by area; establish the <code>_staging/</code> convention.</p></div></div>
+  </div>
+
+  <h3 class="block-h reveal">Phase 2 — Cowork automation</h3>
+  <div class="reveal">
+    <div class="step"><div class="num">6</div><div class="body"><h3>Build the memory tree</h3><p>Create <code>_claude/CLAUDE.md</code> and the <code>memory/</code> subtree; write the staging, session-log, and archive-safety conventions into <code>memory/context/</code> so every session obeys them.</p></div></div>
+    <div class="step"><div class="num">7</div><div class="body"><h3>Set up scheduled briefs</h3><p>Start with meeting-prep, tasks-brief, and email-gravity. Each writes one rolling file to <code>briefs/</code>, with its working folder set to the vault root and a state file for incremental work.</p></div></div>
+    <div class="step"><div class="num">8</div><div class="body"><h3>Wire the daily note + dashboard</h3><p>Have the daily-note template transclude today's briefs; optionally generate <code>dashboard.html</code>; create your first skill or two.</p></div></div>
+  </div>
+
+  <h3 class="block-h reveal">Phase 3 — always-on (optional)</h3>
+  <div class="reveal">
+    <div class="step"><div class="num">9</div><div class="body"><h3>Confirm the personal/work split</h3><p>Non-negotiable before going further. The always-on machine only ever syncs the work vault.</p></div></div>
+    <div class="step"><div class="num">10</div><div class="body"><h3>Harden, sandbox, mount, wire</h3><p>Non-admin agent user, encrypted disk, VPN-only access, outbound firewall; tool calls in a container; mount only the work vault; choose a model (check max output tokens); wire messaging + voice; bake in the drafts-only rule.</p></div></div>
+    <div class="step"><div class="num">11</div><div class="body"><h3>Automate the git backup</h3><p>A daily cron on the always-on machine that commits and pushes the whole vault — the third backup layer alongside live sync and a cloud mirror.</p></div></div>
+  </div>
+
+  <div class="callout green reveal">
+    <span class="ct">Verification mindset</span>
+    <p>Good verifications are concrete: create a test person and meeting and confirm the backlink query shows it;
+    confirm a scheduled task actually wrote a dated brief; confirm the daily note transcludes today's briefs; and for
+    Phase 3, ask the agent to "tidy up" something outside its write scope and confirm it proposes rather than acts.
+    Prefer to <em>demonstrate</em> a capability over asserting it.</p>
+  </div>
+</section>
+
+<!-- ───── 8. Future ───── -->
+<section id="future">
+  <div class="section-top reveal"></div>
+  <div class="slide-label reveal">08 — The Horizon</div>
+  <h2 class="reveal rd1">Where it's <em>going next</em></h2>
+  <p class="section-sub reveal rd2">
+    Not committed — captured so the ideas don't get lost. Each one extends the same core: a plain-text vault, operated by agents.
+  </p>
+  <div class="grid c2">
+    <div class="accent-card purple reveal"><h3>Conjoined brains</h3><p>Share part of a vault with a partner, colleague, or spouse and create a combined workspace that draws on everyone's collected meetings and notes. A co-brain, not just a shared folder.</p></div>
+    <div class="accent-card coral reveal rd1"><h3>Voice UI</h3><p>A voice agent on the phone that reads out tasks, briefs, and ideas while driving — and auto-generates a weekly ~30-minute podcast that reviews the past week and previews the next.</p></div>
+    <div class="accent-card blue reveal"><h3>Auto-drafted action plans</h3><p>For each task, research in the background and draft the docs, emails, or messages needed to action it — shifting from tracking the work to actually doing it.</p></div>
+    <div class="accent-card green reveal rd1"><h3>Task gamification</h3><p>Surface tasks one at a time in a mobile-first focus mode that makes knocking them off feel good — focus mode, not list mode.</p></div>
+    <div class="accent-card orange reveal"><h3>Fractional EA integration</h3><p>Connect a human executive assistant into the vault — same context the AI has — so they can pick up tasks, update status, and draft on your behalf. The vault becomes the shared operating surface.</p></div>
+    <div class="accent-card red reveal rd1"><h3>A second always-on agent</h3><p>When a more trusted self-hosted agent is available, run it on a separate machine and sync the vault to it — using the vault as the loosely-coupled, safe interface between you and a more autonomous worker.</p></div>
+  </div>
+</section>
+
+<!-- ───── Closing ───── -->
+<div class="closing">
+  <blockquote>The "app" is just the vault — and a few <em>agents</em> that operate on it.</blockquote>
+  <div class="foot">Building an AI-Native Second Brain · A field note · Obsidian + Claude</div>
+</div>
+
+</main>
+</div>
+
+<script>
+// Reveal on scroll
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target);}})},{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// Active section in sidebar
+const sections=[...document.querySelectorAll('section')];
+const navItems=[...document.querySelectorAll('.nav-item')];
+const byId=Object.fromEntries(navItems.map(a=>[a.getAttribute('href').slice(1),a]));
+const so=new IntersectionObserver((es)=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      navItems.forEach(n=>n.classList.remove('active'));
+      const a=byId[e.target.id]; if(a)a.classList.add('active');
+    }
+  });
+},{threshold:0,rootMargin:'-45% 0px -50% 0px'});
+sections.forEach(s=>so.observe(s));
+
+// Mobile sidebar toggle
+const sb=document.getElementById('sidebar'), hb=document.getElementById('hamb');
+if(hb){hb.addEventListener('click',()=>sb.classList.toggle('open'));
+  sb.addEventListener('click',e=>{if(e.target.classList.contains('nav-item'))sb.classList.remove('open');});}
+</script>
+</body>
+</html>
