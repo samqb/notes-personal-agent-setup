@@ -12,6 +12,7 @@ live setup.
 
 - `index.html` — the entire site. Inline CSS and JS, no build step. Google Fonts is the
   only external request.
+- `GUIDE.md` — the same content as plain Markdown (renders in Obsidian / on GitHub).
 
 ## Run locally
 
